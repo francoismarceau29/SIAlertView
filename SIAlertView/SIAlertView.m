@@ -923,6 +923,12 @@ static SIAlertView *__si_alert_current_view;
 
 - (void)setupContainerView
 {
+    UIButton *backgroundButton = [[UIButton alloc] init];
+    backgroundButton.backgroundColor = [UIColor clearColor];
+    backgroundButton.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [backgroundButton addTarget:self action:@selector(backgroundButtonTapped) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:backgroundButton];
+    
     self.containerView = [[UIView alloc] initWithFrame:self.bounds];
     self.containerView.backgroundColor = _viewBackgroundColor ? _viewBackgroundColor : [UIColor whiteColor];
     self.containerView.layer.cornerRadius = self.cornerRadius;
@@ -1070,6 +1076,13 @@ static SIAlertView *__si_alert_current_view;
 		item.action(self);
 	}
 	[self dismissAnimated:YES];
+}
+
+- (void)backgroundButtonTapped {
+    if (self.closeOnBackgroundTap) {
+        [SIAlertView setAnimating:YES];
+        [self dismissAnimated:YES];
+    }
 }
 
 #pragma mark - UIWebView delegate
