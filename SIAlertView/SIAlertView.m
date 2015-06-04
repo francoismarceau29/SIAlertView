@@ -23,7 +23,6 @@ NSString *const SIAlertViewDidDismissNotification = @"SIAlertViewDidDismissNotif
 #define WEBVIEW_MAX_HEIGHT 200
 #define CANCEL_BUTTON_PADDING_TOP 5
 #define BUTTON_HEIGHT 44
-#define CONTAINER_WIDTH 300
 
 const UIWindowLevel UIWindowLevelSIAlert = 1999.0;  // don't overlap system's alert
 const UIWindowLevel UIWindowLevelSIAlertBackground = 1998.0; // below the alert window
@@ -253,6 +252,8 @@ static SIAlertView *__si_alert_current_view;
     appearance.messagePadding = 10.0;
     appearance.beforeButtonsPadding = 10;
     appearance.buttonPadding = 10.0;
+    appearance.containerPadding = 10.0;
+    appearance.containerMaxWidth = 300.0;
 }
 
 - (id)init
@@ -741,12 +742,12 @@ static SIAlertView *__si_alert_current_view;
 #if DEBUG_LAYOUT
     NSLog(@"%@, %@", self, NSStringFromSelector(_cmd));
 #endif
-    
+    CGFloat containerWidth = [self containerWidth];
     CGFloat height = [self preferredHeight];
-    CGFloat left = (self.bounds.size.width - CONTAINER_WIDTH) * 0.5;
+    CGFloat left = (self.bounds.size.width - containerWidth) * 0.5;
     CGFloat top = (self.bounds.size.height - height) * 0.5;
     self.containerView.transform = CGAffineTransformIdentity;
-    self.containerView.frame = CGRectMake(left, top, CONTAINER_WIDTH, height);
+    self.containerView.frame = CGRectMake(left, top, containerWidth, height);
     self.containerView.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:self.containerView.bounds cornerRadius:self.containerView.layer.cornerRadius].CGPath;
     
     CGFloat y = self.contentPaddingTop;
@@ -800,6 +801,11 @@ static SIAlertView *__si_alert_current_view;
     }
 }
 
+- (CGFloat)containerWidth {
+    CGFloat width = self.bounds.size.width - (self.containerPadding * 2);
+    return MIN(width, self.containerMaxWidth);
+}
+
 - (CGFloat)preferredHeight
 {
     CGFloat height = self.contentPaddingTop;
@@ -846,7 +852,7 @@ static SIAlertView *__si_alert_current_view;
                        self.titleLabel.minimumFontSize
 #endif
                                 actualFontSize:nil
-                                      forWidth:CONTAINER_WIDTH - self.contentPaddingLeft * 2
+                                      forWidth:[self containerWidth] - self.contentPaddingLeft * 2
                                  lineBreakMode:self.titleLabel.lineBreakMode];
         return ceilf(size.height);
     }
@@ -858,7 +864,7 @@ static SIAlertView *__si_alert_current_view;
     CGFloat minHeight = MESSAGE_MIN_LINE_COUNT * self.messageLabel.font.lineHeight;
     if (self.messageLabel) {
         CGFloat maxHeight = MESSAGE_MAX_LINE_COUNT * self.messageLabel.font.lineHeight;
-        CGSize size = [self.messageLabel sizeThatFits:CGSizeMake(CONTAINER_WIDTH - self.contentPaddingLeft * 2, maxHeight)];
+        CGSize size = [self.messageLabel sizeThatFits:CGSizeMake([self containerWidth] - self.contentPaddingLeft * 2, maxHeight)];
         size.height = ceilf(size.height);
         
         if (size.height < maxHeight) {

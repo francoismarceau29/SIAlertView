@@ -71,6 +71,8 @@ typedef void(^SIAlertViewHandler)(SIAlertView *alertView);
 @property (nonatomic, assign) CGFloat messagePadding NS_AVAILABLE_IOS(5_0) UI_APPEARANCE_SELECTOR; // default is 10.0
 @property (nonatomic, assign) CGFloat buttonPadding NS_AVAILABLE_IOS(5_0) UI_APPEARANCE_SELECTOR; // default is 10.0
 @property (nonatomic, assign) CGFloat beforeButtonsPadding NS_AVAILABLE_IOS(5_0) UI_APPEARANCE_SELECTOR; // default is 10.0
+@property (nonatomic, assign) CGFloat containerPadding NS_AVAILABLE_IOS(5_0) UI_APPEARANCE_SELECTOR; // default is 10.0
+@property (nonatomic, assign) CGFloat containerMaxWidth NS_AVAILABLE_IOS(5_0) UI_APPEARANCE_SELECTOR; // default is 10.0
 @property (nonatomic, assign) BOOL closeOnBackgroundTap;
 
 - (void)setDefaultButtonImage:(UIImage *)defaultButtonImage forState:(UIControlState)state NS_AVAILABLE_IOS(5_0) UI_APPEARANCE_SELECTOR;
