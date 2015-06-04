@@ -21,7 +21,6 @@ NSString *const SIAlertViewDidDismissNotification = @"SIAlertViewDidDismissNotif
 #define MESSAGE_MAX_LINE_COUNT 20
 #define WEBVIEW_MIN_HEIGHT 0
 #define WEBVIEW_MAX_HEIGHT 200
-#define GAP 10
 #define CANCEL_BUTTON_PADDING_TOP 5
 #define BUTTON_HEIGHT 44
 #define CONTAINER_WIDTH 300
@@ -254,6 +253,9 @@ static SIAlertView *__si_alert_current_view;
     appearance.contentPaddingLeft = 10.0;
     appearance.contentPaddingTop = 12.0;
     appearance.contentPaddingBottom = 10.0;
+    appearance.messagePadding = 10.0;
+    appearance.beforeButtonsPadding = 10;
+    appearance.buttonPadding = 10.0;
 }
 
 - (id)init
@@ -759,7 +761,7 @@ static SIAlertView *__si_alert_current_view;
 	}
     if (self.messageLabel) {
         if (y > self.contentPaddingTop) {
-            y += GAP;
+            y += self.messagePadding;
         }
         self.messageLabel.text = self.message;
         CGFloat height = [self heightForMessageLabel];
@@ -768,7 +770,7 @@ static SIAlertView *__si_alert_current_view;
     }
     if (self.webView) {
         if (y > self.contentPaddingTop) {
-            y += GAP;
+            y += self.messagePadding;
         }
         CGFloat height = [self heightForWebView];
         self.webView.frame = CGRectMake(self.contentPaddingLeft, y, self.containerView.bounds.size.width - self.contentPaddingLeft * 2, height);
@@ -776,14 +778,14 @@ static SIAlertView *__si_alert_current_view;
     }
     if (self.items.count > 0) {
         if (y > self.contentPaddingTop) {
-            y += GAP;
+            y += self.beforeButtonsPadding;
         }
         if (self.items.count == 2 && self.buttonsListStyle == SIAlertViewButtonsListStyleNormal) {
-            CGFloat width = (self.containerView.bounds.size.width - self.contentPaddingLeft * 2 - GAP) * 0.5;
+            CGFloat width = (self.containerView.bounds.size.width - self.contentPaddingLeft * 2 - self.buttonPadding) * 0.5;
             UIButton *button = self.buttons[0];
             button.frame = CGRectMake(self.contentPaddingLeft, y, width, BUTTON_HEIGHT);
             button = self.buttons[1];
-            button.frame = CGRectMake(self.contentPaddingLeft + width + GAP, y, width, BUTTON_HEIGHT);
+            button.frame = CGRectMake(self.contentPaddingLeft + width + self.buttonPadding, y, width, BUTTON_HEIGHT);
         } else {
             for (NSUInteger i = 0; i < self.buttons.count; i++) {
                 UIButton *button = self.buttons[i];
@@ -794,7 +796,7 @@ static SIAlertView *__si_alert_current_view;
                         rect.origin.y += CANCEL_BUTTON_PADDING_TOP;
                         button.frame = rect;
                     }
-                    y += BUTTON_HEIGHT + GAP;
+                    y += BUTTON_HEIGHT + self.buttonPadding;
                 }
             }
         }
@@ -809,24 +811,24 @@ static SIAlertView *__si_alert_current_view;
 	}
     if (self.message) {
         if (height > self.contentPaddingTop) {
-            height += GAP;
+            height += self.messagePadding;
         }
         height += [self heightForMessageLabel];
     }
     if (self.webView) {
         if (height > self.contentPaddingTop) {
-            height += GAP;
+            height += self.messagePadding;
         }
         height += [self heightForWebView];
     }
     if (self.items.count > 0) {
         if (height > self.contentPaddingTop) {
-            height += GAP;
+            height += self.messagePadding;
         }
         if (self.items.count <= 2 && self.buttonsListStyle == SIAlertViewButtonsListStyleNormal) {
             height += BUTTON_HEIGHT;
         } else {
-            height += (BUTTON_HEIGHT + GAP) * self.items.count - GAP;
+            height += (BUTTON_HEIGHT + self.buttonPadding) * self.items.count - self.buttonPadding;
             if (self.buttons.count > 2 && ((SIAlertItem *)[self.items lastObject]).type == SIAlertViewButtonTypeCancel) {
                 height += CANCEL_BUTTON_PADDING_TOP;
             }
