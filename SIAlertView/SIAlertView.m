@@ -49,6 +49,7 @@ static SIAlertView *__si_alert_current_view;
 @property (nonatomic, strong) UIWebView *webView;
 @property (nonatomic, strong) UIView *containerView;
 @property (nonatomic, strong) NSMutableArray *buttons;
+@property (nonatomic, strong) SIAlertViewHandler backgroundTapHandler;
 
 @property (nonatomic, assign, getter = isLayoutDirty) BOOL layoutDirty;
 
@@ -1080,10 +1081,13 @@ static SIAlertView *__si_alert_current_view;
 }
 
 - (void)backgroundButtonTapped {
-    if (self.closeOnBackgroundTap) {
+    if (self.backgroundTapHandler) {
+        self.backgroundTapHandler(self);
+        
         [SIAlertView setAnimating:YES];
         [self dismissAnimated:YES];
     }
+    self.backgroundTapHandler = nil;
 }
 
 #pragma mark - UIWebView delegate
