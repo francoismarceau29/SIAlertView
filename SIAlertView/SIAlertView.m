@@ -22,7 +22,7 @@ NSString *const SIAlertViewDidDismissNotification = @"SIAlertViewDidDismissNotif
 #define WEBVIEW_MIN_HEIGHT 0
 #define WEBVIEW_MAX_HEIGHT 200
 #define CANCEL_BUTTON_PADDING_TOP 5
-#define BUTTON_HEIGHT 44
+#define BUTTON_MIN_HEIGHT 44
 
 const UIWindowLevel UIWindowLevelSIAlert = 1999.0;  // don't overlap system's alert
 const UIWindowLevel UIWindowLevelSIAlertBackground = 1998.0; // below the alert window
@@ -255,6 +255,7 @@ static SIAlertView *__si_alert_current_view;
     appearance.buttonPadding = 10.0;
     appearance.containerPadding = 10.0;
     appearance.containerMaxWidth = 300.0;
+    appearance.buttonTitleInsets = UIEdgeInsetsMake(0, 0, 0, 0);
 }
 
 - (id)init
@@ -780,22 +781,27 @@ static SIAlertView *__si_alert_current_view;
             y += self.beforeButtonsPadding;
         }
         if (self.items.count == 2 && self.buttonsListStyle == SIAlertViewButtonsListStyleNormal) {
-            CGFloat width = (self.containerView.bounds.size.width - self.contentPaddingLeft * 2 - self.buttonPadding) * 0.5;
             UIButton *button = self.buttons[0];
-            button.frame = CGRectMake(self.contentPaddingLeft, y, width, BUTTON_HEIGHT);
+            CGFloat width = (self.containerView.bounds.size.width - self.contentPaddingLeft * 2 - self.buttonPadding) * 0.5;
+            CGFloat height = [self heightForItem:self.items[0]];
+            button.frame = CGRectMake(self.contentPaddingLeft, y, width, height);
             button = self.buttons[1];
-            button.frame = CGRectMake(self.contentPaddingLeft + width + self.buttonPadding, y, width, BUTTON_HEIGHT);
+            button.frame = CGRectMake(self.contentPaddingLeft + width + self.buttonPadding, y, width, height);
         } else {
             for (NSUInteger i = 0; i < self.buttons.count; i++) {
                 UIButton *button = self.buttons[i];
-                button.frame = CGRectMake(self.contentPaddingLeft, y, self.containerView.bounds.size.width - self.contentPaddingLeft * 2, BUTTON_HEIGHT);
+                
+                CGFloat height = [self heightForItem:self.items[i]];
+                button.frame = CGRectMake(self.contentPaddingLeft, y, self.containerView.bounds.size.width - self.contentPaddingLeft * 2, height);
+                
                 if (self.buttons.count > 1) {
                     if (i == self.buttons.count - 1 && ((SIAlertItem *)self.items[i]).type == SIAlertViewButtonTypeCancel) {
                         CGRect rect = button.frame;
                         rect.origin.y += CANCEL_BUTTON_PADDING_TOP;
                         button.frame = rect;
+                        
                     }
-                    y += BUTTON_HEIGHT + self.buttonPadding;
+                    y += button.frame.size.height + self.buttonPadding;
                 }
             }
         }
@@ -830,9 +836,13 @@ static SIAlertView *__si_alert_current_view;
             height += self.messagePadding;
         }
         if (self.items.count <= 2 && self.buttonsListStyle == SIAlertViewButtonsListStyleNormal) {
-            height += BUTTON_HEIGHT;
+            height += [self heightForItem:self.items[0]];
         } else {
-            height += (BUTTON_HEIGHT + self.buttonPadding) * self.items.count - self.buttonPadding;
+            for (SIAlertItem *item in self.items) {
+                height += [self heightForItem:item] + self.buttonPadding;
+            }
+            height -= self.buttonPadding;
+            
             if (self.buttons.count > 2 && ((SIAlertItem *)[self.items lastObject]).type == SIAlertViewButtonTypeCancel) {
                 height += CANCEL_BUTTON_PADDING_TOP;
             }
@@ -878,6 +888,15 @@ static SIAlertView *__si_alert_current_view;
         return MAX(minHeight, size.height);
     }
     return minHeight;
+}
+
+- (CGFloat)heightForItem:(SIAlertItem *)item {
+    if (self.buttonsListStyle == SIAlertViewButtonsListStyleNormal) {
+        return BUTTON_MIN_HEIGHT;
+    }
+    CGFloat width = [self containerWidth] - (self.contentPaddingLeft * 2) - self.buttonTitleInsets.left - self.buttonTitleInsets.right;
+    CGSize size = [item.title sizeWithFont:self.buttonFont constrainedToSize:CGSizeMake(width, MAXFLOAT)];
+    return MAX(size.height, BUTTON_MIN_HEIGHT);
 }
 
 - (CGFloat)heightForWebView
@@ -1036,6 +1055,7 @@ static SIAlertView *__si_alert_current_view;
     button.tag = index;
     button.autoresizingMask = UIViewAutoresizingFlexibleWidth;
     button.titleLabel.font = self.buttonFont;
+    [button setTitleEdgeInsets:self.buttonTitleInsets];
     [button setTitle:item.title forState:UIControlStateNormal];
     button.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
     button.titleLabel.textAlignment = NSTextAlignmentCenter;
@@ -1163,6 +1183,19 @@ static SIAlertView *__si_alert_current_view;
     _buttonFont = buttonFont;
     for (UIButton *button in self.buttons) {
         button.titleLabel.font = buttonFont;
+    }
+}
+
+- (void)setButtonTitleInsets:(UIEdgeInsets)buttonTitleInsets {
+    if (_buttonTitleInsets.left == buttonTitleInsets.left
+        && _buttonTitleInsets.top == buttonTitleInsets.top
+        && _buttonTitleInsets.right == buttonTitleInsets.right
+        && _buttonTitleInsets.bottom == buttonTitleInsets.bottom) {
+        return;
+    }
+    _buttonTitleInsets = buttonTitleInsets;
+    for (UIButton *button in self.buttons) {
+        button.titleEdgeInsets = buttonTitleInsets;
     }
 }
 
