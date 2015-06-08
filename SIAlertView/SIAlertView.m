@@ -891,11 +891,12 @@ static SIAlertView *__si_alert_current_view;
 }
 
 - (CGFloat)heightForItem:(SIAlertItem *)item {
-    if (self.buttonsListStyle == SIAlertViewButtonsListStyleNormal) {
+    if (self.items.count <= 2 && self.buttonsListStyle == SIAlertViewButtonsListStyleNormal) {
         return BUTTON_MIN_HEIGHT;
     }
     CGFloat width = [self containerWidth] - (self.contentPaddingLeft * 2) - self.buttonTitleInsets.left - self.buttonTitleInsets.right;
     CGSize size = [item.title sizeWithFont:self.buttonFont constrainedToSize:CGSizeMake(width, MAXFLOAT)];
+    size.height += self.buttonTitleInsets.top + self.buttonTitleInsets.bottom;
     return MAX(size.height, BUTTON_MIN_HEIGHT);
 }
 
