@@ -211,7 +211,7 @@ id observer1,observer2,observer3,observer4;
     [self alert3:nil];
 }
 
-- (NSUInteger)supportedInterfaceOrientations
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations
 {
     return UIInterfaceOrientationMaskAll;
 }
