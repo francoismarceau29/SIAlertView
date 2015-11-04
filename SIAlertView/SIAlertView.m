@@ -970,6 +970,7 @@ static SIAlertView *__si_alert_current_view;
     self.webView = nil;
     [self.buttons removeAllObjects];
     [self.alertWindow removeFromSuperview];
+    self.alertWindow.hidden = YES;
     self.alertWindow = nil;
     self.layoutDirty = NO;
 }
