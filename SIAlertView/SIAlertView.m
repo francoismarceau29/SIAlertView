@@ -24,8 +24,8 @@ NSString *const SIAlertViewDidDismissNotification = @"SIAlertViewDidDismissNotif
 #define CANCEL_BUTTON_PADDING_TOP 5
 #define BUTTON_MIN_HEIGHT 44
 
-const UIWindowLevel UIWindowLevelSIAlert = 1999.0;  // don't overlap system's alert
-const UIWindowLevel UIWindowLevelSIAlertBackground = 1998.0; // below the alert window
+const UIWindowLevel UIWindowLevelSIAlert = 1996.0;  // don't overlap system's alert
+const UIWindowLevel UIWindowLevelSIAlertBackground = 1985.0; // below the alert window
 
 @class SIAlertBackgroundWindow;
 
@@ -269,6 +269,7 @@ static SIAlertView *__si_alert_current_view;
     if (self) {
         _title = title;
         _message = message;
+        _enabledParallaxEffect = YES;
         self.items = [[NSMutableArray alloc] init];
     }
     return self;
@@ -280,6 +281,7 @@ static SIAlertView *__si_alert_current_view;
     if (self) {
         _title = title;
         _htmlString = htmlString;
+        _enabledParallaxEffect = YES;
         self.items = [[NSMutableArray alloc] init];
     }
     return self;
@@ -446,6 +448,9 @@ static SIAlertView *__si_alert_current_view;
             self.didShowHandler(self);
         }
         [[NSNotificationCenter defaultCenter] postNotificationName:SIAlertViewDidShowNotification object:self userInfo:nil];
+        #ifdef __IPHONE_7_0
+        [self addParallaxEffect];
+        #endif
         
         [SIAlertView setAnimating:NO];
         
@@ -472,6 +477,9 @@ static SIAlertView *__si_alert_current_view;
             self.willDismissHandler(self);
         }
         [[NSNotificationCenter defaultCenter] postNotificationName:SIAlertViewWillDismissNotification object:self userInfo:nil];
+        #ifdef __IPHONE_7_0
+                [self removeParallaxEffect];
+        #endif
     }
     
     void (^dismissComplete)(void) = ^{
@@ -855,18 +863,31 @@ static SIAlertView *__si_alert_current_view;
 - (CGFloat)heightForTitleLabel
 {
     if (self.titleLabel) {
-        CGSize size = [self.title sizeWithFont:self.titleLabel.font
-                                   minFontSize:
-#if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_6_0
-                       self.titleLabel.font.pointSize * self.titleLabel.minimumScaleFactor
-#else
-                       self.titleLabel.minimumFontSize
-#endif
-                                actualFontSize:nil
-                                      forWidth:[self containerWidth] - self.contentPaddingLeft * 2
-                                 lineBreakMode:self.titleLabel.lineBreakMode];
-        return ceilf(size.height);
+        #ifdef __IPHONE_7_0
+            NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+            paragraphStyle.lineBreakMode = self.titleLabel.lineBreakMode;
+            
+            NSDictionary *attributes = @{NSFontAttributeName:self.titleLabel.font,
+                                         NSParagraphStyleAttributeName: paragraphStyle.copy};
+            
+            // NSString class method: boundingRectWithSize:options:attributes:context is
+            // available only on ios7.0 sdk.
+            CGRect rect = [self.titleLabel.text boundingRectWithSize:CGSizeMake([self containerWidth] - self.contentPaddingLeft * 2, CGFLOAT_MAX)
+                                                             options:NSStringDrawingUsesLineFragmentOrigin
+                                                          attributes:attributes
+                                                             context:nil];
+            return ceil(rect.size.height);
+        #else
+            CGSize size = [self.title sizeWithFont:self.titleLabel.font
+                                       minFontSize:
+                           self.titleLabel.font.pointSize * self.titleLabel.minimumScaleFactor
+                                    actualFontSize:nil
+                                          forWidth:[self containerWidth] - self.contentPaddingLeft * 2
+                                     lineBreakMode:self.titleLabel.lineBreakMode];
+            return ceilf(size.height);
+        #endif
     }
+    
     return 0;
 }
 
@@ -895,9 +916,15 @@ static SIAlertView *__si_alert_current_view;
         return BUTTON_MIN_HEIGHT;
     }
     CGFloat width = [self containerWidth] - (self.contentPaddingLeft * 2) - self.buttonTitleInsets.left - self.buttonTitleInsets.right;
-    CGSize size = [item.title sizeWithFont:self.buttonFont constrainedToSize:CGSizeMake(width, MAXFLOAT)];
-    size.height += self.buttonTitleInsets.top + self.buttonTitleInsets.bottom;
-    return MAX(size.height, BUTTON_MIN_HEIGHT);
+    NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+    NSDictionary *attributes = @{NSFontAttributeName:self.buttonFont,
+                                 NSParagraphStyleAttributeName: paragraphStyle.copy};
+    CGRect rect = [item.title boundingRectWithSize:CGSizeMake(width, MAXFLOAT)
+                                                     options:NSStringDrawingUsesLineFragmentOrigin
+                                                  attributes:attributes
+                                                     context:nil];
+    rect.size.height += self.buttonTitleInsets.top + self.buttonTitleInsets.bottom;
+    return MAX(rect.size.height, BUTTON_MIN_HEIGHT);
 }
 
 - (CGFloat)heightForWebView
@@ -1261,5 +1288,46 @@ static SIAlertView *__si_alert_current_view;
     }
 }
 
+
+-(void)setColor:(UIColor *)color toButtonsOfType:(SIAlertViewButtonType)type {
+    for (NSUInteger i = 0; i < self.items.count; i++) {
+        SIAlertItem *item = self.items[i];
+        if(item.type == type) {
+            UIButton *button = self.buttons[i];
+            [button setTitleColor:color forState:UIControlStateNormal];
+            [button setTitleColor:[color colorWithAlphaComponent:0.8] forState:UIControlStateHighlighted];
+        }
+    }
+}
+
+# pragma mark -
+# pragma mark Enable parallax effect (iOS7 only)
+
+#ifdef __IPHONE_7_0
+- (void)addParallaxEffect
+{
+    if (_enabledParallaxEffect && NSClassFromString(@"UIInterpolatingMotionEffect"))
+    {
+        UIInterpolatingMotionEffect *effectHorizontal = [[UIInterpolatingMotionEffect alloc] initWithKeyPath:@"position.x" type:UIInterpolatingMotionEffectTypeTiltAlongHorizontalAxis];
+        UIInterpolatingMotionEffect *effectVertical = [[UIInterpolatingMotionEffect alloc] initWithKeyPath:@"position.y" type:UIInterpolatingMotionEffectTypeTiltAlongVerticalAxis];
+        [effectHorizontal setMaximumRelativeValue:@(20.0f)];
+        [effectHorizontal setMinimumRelativeValue:@(-20.0f)];
+        [effectVertical setMaximumRelativeValue:@(50.0f)];
+        [effectVertical setMinimumRelativeValue:@(-50.0f)];
+        [self.containerView addMotionEffect:effectHorizontal];
+        [self.containerView addMotionEffect:effectVertical];
+    }
+}
+
+- (void)removeParallaxEffect
+{
+    if (_enabledParallaxEffect && NSClassFromString(@"UIInterpolatingMotionEffect"))
+    {
+        [self.containerView.motionEffects enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+            [self.containerView removeMotionEffect:obj];
+        }];
+    }
+}
+#endif
 
 @end
