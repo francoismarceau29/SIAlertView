@@ -862,7 +862,7 @@ static SIAlertView *__si_alert_current_view;
 
 - (CGFloat)heightForTitleLabel
 {
-    if (self.titleLabel) {
+    if (self.titleLabel && self.titleLabel.text.length) {
         #ifdef __IPHONE_7_0
             NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
             paragraphStyle.lineBreakMode = self.titleLabel.lineBreakMode;
@@ -894,7 +894,7 @@ static SIAlertView *__si_alert_current_view;
 - (CGFloat)heightForMessageLabel
 {
     CGFloat minHeight = MESSAGE_MIN_LINE_COUNT * self.messageLabel.font.lineHeight;
-    if (self.messageLabel) {
+    if (self.messageLabel && self.messageLabel.text.length) {
         CGFloat maxHeight = MESSAGE_MAX_LINE_COUNT * self.messageLabel.font.lineHeight;
         CGSize size = [self.messageLabel sizeThatFits:CGSizeMake([self containerWidth] - self.contentPaddingLeft * 2, maxHeight)];
         size.height = ceilf(size.height);
